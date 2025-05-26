@@ -1,3 +1,6 @@
+import CreateRoomView from '@/views/CreateRoomView.vue'
+import HomeView from '@/views/HomeView.vue'
+import RoomView from '@/views/RoomView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [

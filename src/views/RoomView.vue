@@ -1,15 +1,17 @@
 <template>
   <div class="room">
-    <h1>Room: {{ roomId }}</h1>
-    <p>Connected: {{ connected }}</p>
+    <h1>Room: {{ roomStore.currentRoomId }}</h1>
+    <p>Connected: {{ roomStore.connected }}</p>
+    <p v-if="roomStore.isHost" class="host-badge">👑 You are the host</p>
 
-    <div v-if="players.length > 0">
-      <p>
-        Players ({{ players.length }}):
-        <span v-for="(player, index) in players" :key="player">
-          {{ player }}<span v-if="index < players.length - 1">, </span>
-        </span>
-      </p>
+    <div v-if="roomStore.players.length > 0">
+      <p>Players ({{ roomStore.players.length }}):</p>
+      <ul>
+        <li v-for="player in roomStore.players" :key="player.id">
+          {{ player.username }}
+          <span v-if="player.id === roomStore.hostId">👑</span>
+        </li>
+      </ul>
     </div>
 
     <button @click="leaveRoom">Leave Room</button>
@@ -17,40 +19,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { io } from 'socket.io-client'
+import { onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useRoomStore } from '../stores/room';
 
-const route = useRoute()
-const router = useRouter()
-const socket = io('http://localhost:3001')
-
-const roomId = ref(route.params.id as string)
-const playerName = ref(route.query.name as string)
-const connected = ref(false)
-const players = ref<string[]>([])
+const route = useRoute();
+const router = useRouter();
+const roomStore = useRoomStore();
 
 onMounted(() => {
-  socket.on('connect', () => {
-    connected.value = true
-    // Join room when connected
-    socket.emit('join-room', {
-      roomId: roomId.value,
-      playerName: playerName.value,
-    })
-  })
+  roomStore.initializeSocket();
 
-  socket.on('room-updated', (room) => {
-    players.value = room.players.filter((p: any) => p && p.name).map((p: any) => p.name)
-  })
-})
+  const roomId = route.params.id as string;
+  const playerName = route.query.name as string;
+  const asHost = route.query.host === 'true';
+
+  if (roomId && playerName) {
+    roomStore.joinRoom(roomId, playerName, asHost);
+  }
+
+  // Handle room deletion
+  roomStore.setRoomDeletedCallback((reason: string) => {
+    alert(`Room was deleted: ${reason}`);
+    router.push('/');
+  });
+});
 
 const leaveRoom = () => {
-  socket.emit('leave-room', { roomId: roomId.value })
-  router.push('/')
-}
+  roomStore.leaveRoom();
+  router.push('/');
+};
 
 onUnmounted(() => {
-  socket.disconnect()
-})
+  roomStore.setRoomDeletedCallback(() => {});
+});
 </script>
+
+<style scoped>
+.host-badge {
+  color: #ffd700;
+  font-weight: bold;
+}
+</style>
