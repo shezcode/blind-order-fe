@@ -4,13 +4,19 @@
 
     <div class="lobby-actions">
       <router-link to="/create">
-        <Button>Create Room</Button>
+        <Button variant="outline" class="hover:cursor-pointer">Create Room</Button>
       </router-link>
 
       <div>
-        <input v-model="joinRoomId" placeholder="Room Code" />
-        <input v-model="playerName" placeholder="Your Name" />
-        <Button @click="joinRoom" :disabled="!canJoin">Join Room</Button>
+        <Input v-model="joinRoomId" placeholder="Room Code" />
+        <Input v-model="playerName" placeholder="Your Name" />
+        <Button
+          class="hover:cursor-pointer"
+          variant="outline"
+          @click="joinRoom"
+          :disabled="!canJoin"
+          >Join Room</Button
+        >
       </div>
     </div>
   </div>
@@ -18,6 +24,7 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
