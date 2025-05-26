@@ -4,19 +4,20 @@
 
     <div class="lobby-actions">
       <router-link to="/create">
-        <button>Create Room</button>
+        <Button>Create Room</Button>
       </router-link>
 
       <div>
         <input v-model="joinRoomId" placeholder="Room Code" />
         <input v-model="playerName" placeholder="Your Name" />
-        <button @click="joinRoom" :disabled="!canJoin">Join Room</button>
+        <Button @click="joinRoom" :disabled="!canJoin">Join Room</Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
