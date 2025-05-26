@@ -89,6 +89,7 @@ export const useRoomStore = defineStore('room', () => {
 
     socket.on('error', (message) => {
       console.error('Socket error: ', message);
+      errorCallback.value?.(message);
       addGameEvent({
         type: 'move-failed',
         data: { error: message },
@@ -98,6 +99,7 @@ export const useRoomStore = defineStore('room', () => {
   };
 
   const roomDeletedCallback = ref<((reason: string) => void) | null>(null);
+  const errorCallback = ref<((error: string) => void) | null>(null);
 
   const addGameEvent = (event: GameEvent) => {
     gameEvents.value.push(event);
@@ -162,6 +164,10 @@ export const useRoomStore = defineStore('room', () => {
     roomDeletedCallback.value = callback;
   };
 
+  const setErrorCallback = (callback: (error: string) => void) => {
+    errorCallback.value = callback;
+  };
+
   // Computed helpers
   const canStartGame = () => {
     return isHost.value && players.value.length >= 2 && gameState.value.state === 'lobby';
@@ -199,6 +205,7 @@ export const useRoomStore = defineStore('room', () => {
     playNumber,
     resetGame,
     setRoomDeletedCallback,
+    setErrorCallback,
 
     // Helpers
     canStartGame,
