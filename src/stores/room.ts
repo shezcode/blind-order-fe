@@ -87,6 +87,12 @@ export const useRoomStore = defineStore('room', () => {
       roomDeletedCallback.value?.(data.reason);
     });
 
+    socket.on('left-room', () => {
+      // Confirm that we've left the room
+      console.log('Successfully left room');
+      leaveCallback.value?.();
+    });
+
     socket.on('error', (message) => {
       console.error('Socket error: ', message);
       errorCallback.value?.(message);
@@ -100,12 +106,13 @@ export const useRoomStore = defineStore('room', () => {
 
   const roomDeletedCallback = ref<((reason: string) => void) | null>(null);
   const errorCallback = ref<((error: string) => void) | null>(null);
+  const leaveCallback = ref<(() => void) | null>(null);
 
   const addGameEvent = (event: GameEvent) => {
-    gameEvents.value.push(event);
+    gameState.value.gameEvents.push(event);
     // Keep only last 50 events to prevent memory issues
-    if (gameEvents.value.length > 50) {
-      gameEvents.value = gameEvents.value.slice(-50);
+    if (gameState.value.gameEvents.length > 50) {
+      gameState.value.gameEvents = gameState.value.gameEvents.slice(-50);
     }
   };
 
@@ -116,15 +123,14 @@ export const useRoomStore = defineStore('room', () => {
     isHost.value = false;
     hostId.value = '';
     currentPlayerNumbers.value = [];
-    gameEvents.value = [];
     gameState.value = {
       state: 'lobby',
       lives: 3,
       maxLives: 3,
       timeline: [],
-      nextExpected: -1,
       progress: 0,
       remainingNumbers: [],
+      gameEvents: [],
     };
   };
 
@@ -136,6 +142,7 @@ export const useRoomStore = defineStore('room', () => {
   };
 
   const leaveRoom = () => {
+    console.log(`Leaving room ${currentRoomId.value}`);
     if (currentRoomId.value) {
       socket.emit('leave-room', { roomId: currentRoomId.value });
     }
@@ -166,6 +173,10 @@ export const useRoomStore = defineStore('room', () => {
 
   const setErrorCallback = (callback: (error: string) => void) => {
     errorCallback.value = callback;
+  };
+
+  const setLeaveCallback = (callback: () => void) => {
+    leaveCallback.value = callback;
   };
 
   // Computed helpers
@@ -206,6 +217,7 @@ export const useRoomStore = defineStore('room', () => {
     resetGame,
     setRoomDeletedCallback,
     setErrorCallback,
+    setLeaveCallback,
 
     // Helpers
     canStartGame,

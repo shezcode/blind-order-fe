@@ -144,7 +144,7 @@
 
     <!-- Full-screen victory/game over overlay -->
     <div
-      v-if="gameState.state === 'victory'"
+      v-if="gameState.state === 'victory' && showOverlay"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       @click="closeOverlay"
     >
@@ -156,14 +156,22 @@
         <h3 class="text-2xl font-bold text-foreground mb-2">Victory!</h3>
         <p class="text-muted-foreground mb-6">You successfully completed the sequence!</p>
         <div class="space-y-3">
-          <Button v-if="isHost" @click="resetGame" class="w-full">Play Again</Button>
-          <Button variant="outline" @click="closeOverlay" class="w-full">Continue</Button>
+          <Button v-if="isHost" @click="handleResetGame" class="w-full"> 🔄 Play Again </Button>
+          <Button v-else variant="outline" @click="handleGoHome" class="w-full">
+            🏠 Go Home
+          </Button>
+          <Button variant="ghost" @click="closeOverlay" class="w-full text-sm">
+            📊 View Results
+          </Button>
         </div>
+        <p v-if="!isHost" class="text-xs text-muted-foreground mt-3">
+          Only the host can start a new game
+        </p>
       </div>
     </div>
 
     <div
-      v-if="gameState.state === 'game-over'"
+      v-if="gameState.state === 'game-over' && showOverlay"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       @click="closeOverlay"
     >
@@ -175,9 +183,17 @@
         <h3 class="text-2xl font-bold text-foreground mb-2">Game Over</h3>
         <p class="text-muted-foreground mb-6">You ran out of lives!</p>
         <div class="space-y-3">
-          <Button v-if="isHost" @click="resetGame" class="w-full">Try Again</Button>
-          <Button variant="outline" @click="closeOverlay" class="w-full">Continue</Button>
+          <Button v-if="isHost" @click="handleResetGame" class="w-full"> 🔄 Try Again </Button>
+          <Button v-else variant="outline" @click="handleGoHome" class="w-full">
+            🏠 Go Home
+          </Button>
+          <Button variant="ghost" @click="closeOverlay" class="w-full text-sm">
+            📊 View Results
+          </Button>
         </div>
+        <p v-if="!isHost" class="text-xs text-muted-foreground mt-3">
+          Only the host can restart the game
+        </p>
       </div>
     </div>
   </div>
@@ -185,7 +201,7 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { GameEvent } from '@/stores/room';
 
 interface Props {
@@ -195,11 +211,22 @@ interface Props {
   canPlayNumber: (number: number) => boolean;
   playNumber: (number: number) => void;
   resetGame: () => void;
+  goHome: () => void;
 }
 
 const props = defineProps<Props>();
 
 const showOverlay = ref(true);
+
+// Reset overlay when game state changes
+watch(
+  () => props.gameState.state,
+  (newState) => {
+    if (newState === 'game-over' || newState === 'victory') {
+      showOverlay.value = true;
+    }
+  },
+);
 
 const recentEvents = computed(() => {
   return (props.gameState.gameEvents || []).slice(-3).reverse();
@@ -207,6 +234,15 @@ const recentEvents = computed(() => {
 
 const closeOverlay = () => {
   showOverlay.value = false;
+};
+
+const handleResetGame = () => {
+  props.resetGame();
+  showOverlay.value = false;
+};
+
+const handleGoHome = () => {
+  props.goHome();
 };
 
 const getEventStyling = (eventType: string) => {

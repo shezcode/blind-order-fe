@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-background p-4">
+  <div class="min-h-[calc(100vh-8rem)] p-4">
     <!-- Loading State -->
     <div v-if="isValidating" class="max-w-2xl mx-auto flex items-center justify-center py-20">
       <div class="text-center space-y-4">
@@ -139,6 +139,7 @@
           :can-play-number="roomStore.canPlayNumber"
           :play-number="roomStore.playNumber"
           :reset-game="roomStore.resetGame"
+          :go-home="goHome"
         />
       </div>
 
@@ -147,11 +148,11 @@
         <h2 class="text-lg font-semibold text-foreground mb-4">Game Status</h2>
         <div class="text-center py-6">
           <div class="text-muted-foreground mb-4">
-            <span
-              class="inline-block w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mb-2"
+            <div
+              class="inline-flex items-center justify-center w-12 h-12 bg-muted/50 rounded-full mb-2"
             >
-              ⏳
-            </span>
+              <span class="text-lg leading-none">⏳</span>
+            </div>
             <p>Waiting for players to join...</p>
           </div>
 
@@ -317,15 +318,33 @@ onMounted(async () => {
       roomNotFound.value = true;
     }
   });
+
+  // Handle successful room leave
+  roomStore.setLeaveCallback(() => {
+    router.push('/');
+  });
 });
 
 const goHome = () => {
-  router.push('/');
+  // Set up a one-time callback for immediate redirect
+  roomStore.setLeaveCallback(() => {
+    router.push('/');
+    // Clear the callback after use
+    roomStore.setLeaveCallback(() => {});
+  });
+
+  // Leave the room - the callback will handle the redirect
+  roomStore.leaveRoom();
 };
 
 const leaveRoom = () => {
   roomStore.leaveRoom();
-  router.push('/');
+  // Fallback redirect in case socket callback doesn't fire
+  setTimeout(() => {
+    if (route.path !== '/') {
+      router.push('/');
+    }
+  }, 1000);
 };
 
 const copyRoomCode = async () => {
@@ -359,5 +378,6 @@ const shareRoom = async () => {
 onUnmounted(() => {
   roomStore.setRoomDeletedCallback(() => {});
   roomStore.setErrorCallback(() => {});
+  roomStore.setLeaveCallback(() => {});
 });
 </script>
